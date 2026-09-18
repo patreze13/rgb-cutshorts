@@ -1,4 +1,4 @@
-name: Build Android APK
+name: Build APK
 
 on:
   push:
@@ -7,57 +7,42 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
-
+    runs-on: ubuntu-latest
     steps:
-    - name: Checkout Código
-      uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: Configurar Java
-      uses: actions/setup-java@v4
-      with:
-        distribution: 'temurin'
-        java-version: '17'
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
 
-    - name: Configurar Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.10'
+      - name: Install system deps
+        run: |
+          sudo apt update
+          sudo apt install -y \
+            git zip unzip openjdk-17-jdk \
+            autoconf libtool pkg-config \
+            zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo6 \
+            cmake libffi-dev libssl-dev
 
-    - name: Cache Buildozer
-      uses: actions/cache@v4
-      with:
-        path: ~/.buildozer
-        key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}
-        restore-keys: |
-          ${{ runner.os }}-buildozer-
+      - name: Install buildozer
+        run: |
+          pip install --user --upgrade buildozer cython
 
-    - name: Instalar Dependências do Sistema
-      run: |
-        sudo apt update
-        sudo apt install -y git zip unzip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev cmake libffi-dev libssl-dev ffmpeg
-        pip install --upgrade buildozer Cython virtualenv
+      - name: Cache buildozer global
+        uses: actions/cache@v4
+        with:
+          path: ~/.buildozer
+          key: buildozer-${{ runner.os }}-${{ hashFiles('buildozer.spec') }}
 
-    - name: Aceitar Licenças do Android SDK
-      run: |
-        mkdir -p $HOME/.android
-        touch $HOME/.android/repositories.cfg
-        yes | sudo ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --licenses || true
+      - name: Build APK
+        run: |
+          export PATH=$PATH:~/.local/bin
+          yes | buildozer android debug
 
-    - name: Compilar APK Debug com Assinatura Fixa
-      run: |
-        yes | buildozer -v android debug
-
-    - name: Preparar APK para Download
-      run: |
-        mkdir -p saida
-        find bin/ -name "*.apk" -exec cp {} saida/RGB_CutShorts.apk \;
-
-    - name: Publicar Release com o APK Pronto
-      uses: softprops/action-gh-release@v1
-      with:
-        tag_name: v1.${{ github.run_number }}
-        name: RGB CutShorts v1.${{ github.run_number }}
-        files: saida/RGB_CutShorts.apk
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: rgb-cutshorts-apk
+          path: bin/*.apk

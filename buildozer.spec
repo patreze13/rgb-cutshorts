@@ -1,18 +1,30 @@
 [app]
+
 title = RGB CutShorts
 package.name = rgbcutshorts
-package.domain = com.rgb
+package.domain = org.rgb
 
 source.dir = .
-source.include_exts = py,png,jpg,kv,atlas
+source.include_exts = py,png,jpg,jpeg,kv,atlas,json,ttf,otf
 
-version = 1.0.0
+version = 0.1
 
-requirements = python3,kivy,yt-dlp,google-generativeai,ffmpeg
+requirements = python3,kivy==2.3.0,requests,urllib3,charset-normalizer,idna,certifi
 
 orientation = portrait
+fullscreen = 0
 
-android.permissions = INTERNET,WRITE_EXTERNAL_STORAGE,READ_EXTERNAL_STORAGE
+android.permissions = INTERNET
+
 android.api = 33
 android.minapi = 24
-android.archs = arm64-v8a
+android.ndk = 25b
+android.archs = arm64-v8a, armeabi-v7a
+
+android.allow_backup = True
+android.accept_sdk_license = True
+
+[buildozer]
+
+log_level = 2
+warn_on_root = 1
