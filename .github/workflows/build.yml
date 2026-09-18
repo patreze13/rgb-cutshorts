@@ -24,6 +24,14 @@ jobs:
       with:
         python-version: '3.10'
 
+    - name: Cache Buildozer
+      uses: actions/cache@v4
+      with:
+        path: ~/.buildozer
+        key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}
+        restore-keys: |
+          ${{ runner.os }}-buildozer-
+
     - name: Instalar Dependências do Sistema
       run: |
         sudo apt update
@@ -36,25 +44,20 @@ jobs:
         touch $HOME/.android/repositories.cfg
         yes | sudo ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
-    - name: Criar Chave Fixa de Assinatura (Keystore)
+    - name: Compilar APK Debug com Assinatura Fixa
       run: |
-        keytool -genkey -v -keystore rgb_release.keystore -alias rgbkey -keyalg RSA -keysize 2048 -validity 10000 -storepass rgbshorts123 -keypass rgbshorts123 -dname "CN=RGBCutShorts, OU=Dev, O=RGB, L=BR, S=BA, C=BR"
+        yes | buildozer -v android debug
 
-    - name: Compilar APK
+    - name: Preparar APK para Download
       run: |
-        yes | buildozer -v android release
-
-    - name: Assinar o APK para permitir Atualização
-      run: |
-        APK_PATH=$(find bin/ -name "*.apk" | head -n 1)
-        jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore rgb_release.keystore -storepass rgbshorts123 -keypass rgbshorts123 $APK_PATH rgbkey
-        mv $APK_PATH bin/RGB_CutShorts.apk
+        mkdir -p saida
+        find bin/ -name "*.apk" -exec cp {} saida/RGB_CutShorts.apk \;
 
     - name: Publicar Release com o APK Pronto
       uses: softprops/action-gh-release@v1
       with:
         tag_name: v1.${{ github.run_number }}
         name: RGB CutShorts v1.${{ github.run_number }}
-        files: bin/RGB_CutShorts.apk
+        files: saida/RGB_CutShorts.apk
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
