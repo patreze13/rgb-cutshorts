@@ -1,20 +1,7 @@
-import os
 import sys
+import os
 import traceback
-
-
-def _log_crash(exc_text):
-    try:
-        base = os.path.expanduser("~")
-        log_path = os.path.join(base, "crash.log")
-        with open(log_path, "w") as f:
-            f.write(exc_text)
-        print(f"[CRASH] Log salvo em: {log_path}")
-        print(exc_text)
-    except Exception as e:
-        print(f"[CRASH] Falha ao salvar log: {e}")
-        print(exc_text)
-
+import urllib.request
 
 try:
     import kivy
@@ -24,7 +11,6 @@ try:
     from kivy.uix.textinput import TextInput
     from kivy.uix.button import Button
     from kivy.core.window import Window
-    import requests
 
     Window.clearcolor = (0.1, 0.1, 0.1, 1)
 
@@ -74,5 +60,4 @@ try:
         RGBCutShortsApp().run()
 
 except Exception:
-    _log_crash(traceback.format_exc())
-    raise
+    sys.exit(1)
